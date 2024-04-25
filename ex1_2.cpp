@@ -18,31 +18,37 @@ int main()
     int weighted_edge_cut = 0;
 
     // get edge data
-    for (int i = 0; i < m * 2; i++) {
+    for (int i = 0; i < m * 2; i++)
+    {
         int source, destination, weight;
         cin >> source >> destination >> weight;
         edges[source - 1][destination - 1] = weight;
     }
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++)
+    {
         cin >> partitions[i];
     }
 
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if (partitions[i] != partitions[j]) {
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if (partitions[i] != partitions[j])
+            {
                 edge_cut += 1;
                 weighted_edge_cut += edges[i][j];
             }
         }
     }
 
-    vector<int> partSizes(k,0);
-    
-    for (int i = 0; i < n; i++) {
+    vector<int> partSizes(k, 0);
+
+    for (int i = 0; i < n; i++)
+    {
         partSizes[partitions[i]] += 1;
     }
-    
+
     double max_partition_size = *max_element(partSizes.begin(), partSizes.end());
 
     double ideal_partition_size = (float)n / (float)k;
