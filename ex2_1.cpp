@@ -24,17 +24,17 @@ struct Edge
 class Graph
 {
 private:
-    int numberOfVertices; // number of vertices
-    vector<vector<Edge> > adjacencyList;
+    int _numberOfVertices; // number of vertices
+    vector<vector<Edge> > _adjacencyList;
 
 public:
     /**
      * @brief Constructs a Graph object with the specified number of vertices.
      * @param vertices The number of vertices in the graph.
      */
-    Graph(int vertices) : numberOfVertices(vertices)
+    Graph(int vertices) : _numberOfVertices(vertices)
     {
-        adjacencyList.resize(numberOfVertices + 1);
+        _adjacencyList.resize(_numberOfVertices + 1);
     }
 
     /**
@@ -45,7 +45,102 @@ public:
      */
     void addEdge(int source, int destination, int weight)
     {
-        adjacencyList[source].push_back(Edge(source, destination, weight));
+        _adjacencyList[source].push_back(Edge(source, destination, weight));
+    }
+
+    /**
+     * @brief Returns the maximum degree of the graph
+     * @return The maximum degree
+     */
+    int getMaxDegree() const
+    {
+        int maxDegree = 0;
+
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
+            maxDegree = max(maxDegree, static_cast<int>(_adjacencyList[vertex].size()));
+
+        return maxDegree;
+    }
+
+    /**
+     * @brief Returns the minimum degree of the graph
+     * @return The minimum degree
+     */
+    int getMinDegree() const
+    {
+        int minDegree = INT_MAX;
+
+        for (int vertex = 1; vertex < _numberOfVertices; ++vertex)
+            minDegree = min(minDegree, static_cast<int>(_adjacencyList[vertex].size()));
+
+        return minDegree;
+    }
+
+    /**
+     * @brief Returns the weighted degree of a vertex
+     * @param vertex The vertex
+     * @return The weighted degree of the vertex
+     */
+    int getWeightedDegree(int vertex) const
+    {
+        int weightedDegree = 0;
+        for (const Edge &edge : _adjacencyList[vertex])
+        {
+            weightedDegree += edge.weight;
+        }
+
+        return weightedDegree;
+    }
+
+    /**
+     * @brief Returns the maximum weighted degree of the graph
+     * @return The maximum weighted degree
+     */
+    int getMaxWeightedDegree() const
+    {
+        int maxWeightedDegree = INT_MIN;
+
+        for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
+        {
+            maxWeightedDegree = max(maxWeightedDegree, getWeightedDegree(vertex));
+        }
+
+        return maxWeightedDegree;
+    }
+
+    /**
+     * @brief Returns the minimum weighted degree of the graph
+     * @return The minimum weighted degree
+     */
+    int getMinWeightedDegree() const
+    {
+        int minWeightedDegree = INT_MAX;
+
+        for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
+        {
+            minWeightedDegree = min(minWeightedDegree, getWeightedDegree(vertex));
+        }
+
+        return minWeightedDegree;
+    }
+
+    /**
+     * @brief Returns the total weight of the graph
+     * @return The total weight
+     */
+    int getTotalWeight() const
+    {
+        int totalWeight = 0;
+
+        for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
+        {
+            for (const Edge &edge : _adjacencyList[vertex])
+            {
+                totalWeight += edge.weight;
+            }
+        }
+
+        return totalWeight / 2;
     }
 
     /**
@@ -56,15 +151,48 @@ public:
      */
     void printGraph()
     {
-        for (int vertex = 1; vertex <= numberOfVertices; ++vertex)
+        for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
         {
             cout << "Vertex " << vertex << endl;
-            for (const Edge &edge : adjacencyList[vertex])
+            for (const Edge &edge : _adjacencyList[vertex])
             {
-                cout <<  edge.source << " -> " << edge.destination << " (weight: " << edge.weight << ")" << endl;
+                cout << edge.source << " - " << edge.destination << " (weight: " << edge.weight << ")" << endl;
             }
             cout << endl;
         }
+    }
+
+    /**
+     * @brief Computes partitioning metrics for the graph.
+     * @param partition A vector containing the partition of each vertex.
+     * @param k The number of blocks in the partition.
+     * @param edgeCut The edge-cut of the partition.
+     * @param weightedEdgeCut The weighted edge-cut of the partition.
+     * @param balance The balance of the partition.
+     */
+    void computePartitionMetrics(const vector<int> &partition, int numberOfBlocks, int &edgeCut, int &weightedEdgeCut, double &balance) const
+    {
+        edgeCut = 0;
+        weightedEdgeCut = 0;
+        vector<int> blockSizes(numberOfBlocks, 0);
+
+        for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
+        {
+            for (const Edge &edge : _adjacencyList[vertex])
+            {
+                int sourcePartition = partition[vertex - 1];
+                int destPartition = partition[edge.destination - 1];
+                if (sourcePartition != destPartition)
+                {
+                    edgeCut++;
+                    weightedEdgeCut += edge.weight;
+                }
+            }
+            blockSizes[partition[vertex - 1]]++;
+        }
+
+        int maxBlockSize = *max_element(blockSizes.begin(), blockSizes.end());
+        balance = static_cast<double>(maxBlockSize) / (_numberOfVertices / static_cast<double>(numberOfBlocks));
     }
 };
 
@@ -75,7 +203,7 @@ public:
 int main()
 {
 
-    ifstream file("/Users/jan/Documents/code/AlgorithmEngineering/example2_1.txt");
+    ifstream file("/Users/jan/Documents/code/AlgorithmEngineering/example1_2.txt");
     if (!file.is_open())
     {
         cerr << "Failed to open the file." << endl;
@@ -96,7 +224,14 @@ int main()
         G.addEdge(source, destination, weight);
     }
 
-    G.printGraph();
+    // Read partition
+    // vector<int> partition(numberOfNodes);
+    // for (int i = 0; i < numberOfNodes; ++i)
+    // {
+    //    file >> partition[i];
+    // }
+
+    // G.printGraph();
 
     return 0;
 }
