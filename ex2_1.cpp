@@ -68,7 +68,7 @@ public:
      */
     int getMinDegree() const
     {
-        int minDegree = INT_MAX;
+        int minDegree = 1000;
 
         for (int vertex = 1; vertex < _numberOfVertices; ++vertex)
             minDegree = min(minDegree, static_cast<int>(_adjacencyList[vertex].size()));
@@ -98,7 +98,7 @@ public:
      */
     int getMaxWeightedDegree() const
     {
-        int maxWeightedDegree = INT_MIN;
+        int maxWeightedDegree = 0;
 
         for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
         {
@@ -114,7 +114,7 @@ public:
      */
     int getMinWeightedDegree() const
     {
-        int minWeightedDegree = INT_MAX;
+        int minWeightedDegree = 1000;
 
         for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
         {
@@ -151,6 +151,7 @@ public:
      */
     void printGraph()
     {
+        cout << endl;
         for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
         {
             cout << "Vertex " << vertex << endl;
@@ -203,7 +204,7 @@ public:
 int main()
 {
 
-    ifstream file("/Users/jan/Documents/code/AlgorithmEngineering/example1_2.txt");
+    ifstream file("/Users/jan/Documents/code/AlgorithmEngineering/example2_1.txt");
     if (!file.is_open())
     {
         cerr << "Failed to open the file." << endl;
@@ -228,10 +229,10 @@ int main()
     // vector<int> partition(numberOfNodes);
     // for (int i = 0; i < numberOfNodes; ++i)
     // {
-    //    file >> partition[i];
+    //     file >> partition[i];
     // }
 
-    // G.printGraph();
+    G.printGraph();
 
     return 0;
 }
