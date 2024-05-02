@@ -24,7 +24,9 @@ struct Edge
 class Graph
 {
 private:
-    int _numberOfVertices; // number of vertices
+    int _weightedEdgeCut;
+    int _edgeCut;
+    int _numberOfVertices;
     vector<vector<Edge> > _adjacencyList;
 
 public:
@@ -163,6 +165,16 @@ public:
         }
     }
 
+    int getEdgeCut()
+    {
+        return _edgeCut;
+    }
+
+    int getWeightedEdgeCut()
+    {
+        return _weightedEdgeCut;
+    }
+
     /**
      * @brief Computes partitioning metrics for the graph.
      * @param partition A vector containing the partition of each vertex.
@@ -171,10 +183,10 @@ public:
      * @param weightedEdgeCut The weighted edge-cut of the partition.
      * @param balance The balance of the partition.
      */
-    void computePartitionMetrics(const vector<int> &partition, int numberOfBlocks, int &edgeCut, int &weightedEdgeCut, double &balance) const
+    double computePartitionMetrics(const vector<int> &partition, int numberOfBlocks)
     {
-        edgeCut = 0;
-        weightedEdgeCut = 0;
+        _edgeCut = 0;
+        _weightedEdgeCut = 0;
         vector<int> blockSizes(numberOfBlocks, 0);
 
         for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
@@ -185,16 +197,56 @@ public:
                 int destPartition = partition[edge.destination - 1];
                 if (sourcePartition != destPartition)
                 {
-                    edgeCut++;
-                    weightedEdgeCut += edge.weight;
+                    _edgeCut++;
+                    _weightedEdgeCut += edge.weight;
                 }
             }
             blockSizes[partition[vertex - 1]]++;
         }
-
         int maxBlockSize = *max_element(blockSizes.begin(), blockSizes.end());
-        balance = static_cast<double>(maxBlockSize) / (_numberOfVertices / static_cast<double>(numberOfBlocks));
+        double balance = static_cast<double>(maxBlockSize) / (_numberOfVertices / static_cast<double>(numberOfBlocks));
+        return balance;
     }
+
+    void computeMaxCut() {
+        vector<int> cutPartition(_numberOfVertices, 0); // Vector which keeps track of the partitions
+        cutPartition[0] = 1;                            // initial cut: Node 0 in Partition 1
+
+        computePartitionMetrics(cutPartition, 2);
+        int localHigh = _weightedEdgeCut;
+
+        bool somethingChanged = false;
+
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex) {
+            cutPartition[vertex] ^= 1; // Alternating between 0 and 1 using bitwise XOR
+        }
+
+        while (!somethingChanged) {
+            somethingChanged = false;
+
+            for (int vertex = 0; vertex < _numberOfVertices; ++vertex) {
+                cutPartition[vertex] ^= 1; // Toggle partition for current vertex
+
+                computePartitionMetrics(cutPartition, 2);
+
+                if (localHigh < _weightedEdgeCut) {
+                    localHigh = _weightedEdgeCut;
+                    somethingChanged = true;
+                } else {
+                    cutPartition[vertex] ^= 1; // Revert partition change if not improving
+                }
+            }
+        }
+
+        cout << localHigh / 2 << endl;
+
+        for (int i = 0; i < _numberOfVertices; i++) {
+            if (cutPartition[i] == 1) {
+                cout << i + 1 << " ";
+            }
+        }
+    }
+
 };
 
 /**
@@ -204,16 +256,9 @@ public:
 int main()
 {
 
-    ifstream file("/Users/jan/Documents/code/AlgorithmEngineering/example2_1.txt");
-    if (!file.is_open())
-    {
-        cerr << "Failed to open the file." << endl;
-        return 1;
-    }
-
     // get graph metrics
     int numberOfNodes, numberOfEdges;
-    file >> numberOfNodes >> numberOfEdges;
+    cin >> numberOfNodes >> numberOfEdges;
 
     Graph G(numberOfNodes);
 
@@ -221,7 +266,7 @@ int main()
     for (int i = 0; i < numberOfEdges * 2; i++)
     {
         int source, destination, weight;
-        file >> source >> destination >> weight;
+        cin >> source >> destination >> weight;
         G.addEdge(source, destination, weight);
     }
 
@@ -232,12 +277,14 @@ int main()
     //     file >> partition[i];
     // }
 
-    G.printGraph();
+    // G.printGraph();
+    
+    G.computeMaxCut();
 
     return 0;
 }
 
 /*
-3
-1 2 3 4 5 7
+30
+3 5 7
 */

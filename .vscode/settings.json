@@ -5,6 +5,7 @@
         "__split_buffer": "cpp",
         "string": "cpp",
         "limits": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "bitset": "cpp"
     }
 }
