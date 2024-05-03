@@ -45,7 +45,7 @@ public:
      */
     void addEdge(int source, int destination, int weight)
     {
-        _adjacencyList[source].push_back(Edge(source, destination, weight));
+        _adjacencyList[source - 1].push_back(Edge(source - 1, destination - 1, weight));
     }
 
     /**
@@ -154,10 +154,10 @@ public:
         cout << endl;
         for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
         {
-            cout << "Vertex " << vertex << endl;
+            cout << "Vertex " << vertex + 1 << endl;
             for (const Edge &edge : _adjacencyList[vertex])
             {
-                cout << edge.source << " - " << edge.destination << " (weight: " << edge.weight << ")" << endl;
+                cout << edge.source + 1 << " - " << edge.destination + 1 << " (weight: " << edge.weight << ")" << endl;
             }
             cout << endl;
         }
@@ -201,7 +201,7 @@ public:
                 int sourcePartition = partition[vertex];
                 int destPartition = partition[edge.destination];
                 if (sourcePartition != destPartition)
-                {   
+                {
                     weightedEdgeCut += edge.weight;
                 }
             }
@@ -309,7 +309,7 @@ public:
                 }
             }
         } while (improved);
-        cout << endl;
+
         cout << localHighWeightedEdgeCut << endl;
 
         for (int i = 0; i < _numberOfVertices; i++)
@@ -343,11 +343,11 @@ int main()
     Graph G(numberOfNodes);
 
     // get edge data
-    for (int i = 0; i < numberOfEdges * 2; i++)
+    for (int i = 0; i < numberOfEdges * 2; ++i)
     {
         int source, destination, weight;
         file >> source >> destination >> weight;
-        G.addEdge(source - 1, destination - 1, weight);
+        G.addEdge(source, destination, weight); // 0-based indexing
     }
 
     // Read partition
