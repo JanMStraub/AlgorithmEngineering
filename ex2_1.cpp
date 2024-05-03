@@ -24,8 +24,6 @@ struct Edge
 class Graph
 {
 private:
-    int _weightedEdgeCut;
-    int _edgeCut;
     int _numberOfVertices;
     vector<vector<Edge> > _adjacencyList;
 
@@ -36,7 +34,7 @@ public:
      */
     Graph(int vertices) : _numberOfVertices(vertices)
     {
-        _adjacencyList.resize(_numberOfVertices + 1);
+        _adjacencyList.resize(_numberOfVertices);
     }
 
     /**
@@ -72,7 +70,7 @@ public:
     {
         int minDegree = 1000;
 
-        for (int vertex = 1; vertex < _numberOfVertices; ++vertex)
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
             minDegree = min(minDegree, static_cast<int>(_adjacencyList[vertex].size()));
 
         return minDegree;
@@ -102,7 +100,7 @@ public:
     {
         int maxWeightedDegree = 0;
 
-        for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
         {
             maxWeightedDegree = max(maxWeightedDegree, getWeightedDegree(vertex));
         }
@@ -118,7 +116,7 @@ public:
     {
         int minWeightedDegree = 1000;
 
-        for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
         {
             minWeightedDegree = min(minWeightedDegree, getWeightedDegree(vertex));
         }
@@ -134,7 +132,7 @@ public:
     {
         int totalWeight = 0;
 
-        for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
         {
             for (const Edge &edge : _adjacencyList[vertex])
             {
@@ -154,7 +152,7 @@ public:
     void printGraph()
     {
         cout << endl;
-        for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
         {
             cout << "Vertex " << vertex << endl;
             for (const Edge &edge : _adjacencyList[vertex])
@@ -165,88 +163,163 @@ public:
         }
     }
 
-    int getEdgeCut()
-    {
-        return _edgeCut;
-    }
-
-    int getWeightedEdgeCut()
-    {
-        return _weightedEdgeCut;
-    }
-
     /**
-     * @brief Computes partitioning metrics for the graph.
+     * @brief Computes the edge-cut metrics for the graph partition.
      * @param partition A vector containing the partition of each vertex.
-     * @param k The number of blocks in the partition.
-     * @param edgeCut The edge-cut of the partition.
-     * @param weightedEdgeCut The weighted edge-cut of the partition.
-     * @param balance The balance of the partition.
+     * @return The edge-cut of the partition.
      */
-    double computePartitionMetrics(const vector<int> &partition, int numberOfBlocks)
+    int getEdgeCut(const vector<int> &partition)
     {
-        _edgeCut = 0;
-        _weightedEdgeCut = 0;
-        vector<int> blockSizes(numberOfBlocks, 0);
-
-        for (int vertex = 1; vertex <= _numberOfVertices; ++vertex)
+        int edgeCut = 0;
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
         {
             for (const Edge &edge : _adjacencyList[vertex])
             {
-                int sourcePartition = partition[vertex - 1];
-                int destPartition = partition[edge.destination - 1];
+                int sourcePartition = partition[vertex];
+                int destPartition = partition[edge.destination];
                 if (sourcePartition != destPartition)
                 {
-                    _edgeCut++;
-                    _weightedEdgeCut += edge.weight;
+                    edgeCut++;
                 }
             }
-            blockSizes[partition[vertex - 1]]++;
+        }
+        return edgeCut / 2;
+    }
+
+    /**
+     * @brief Computes the weighted edge-cut metrics for the graph partition.
+     * @param partition A vector containing the partition of each vertex.
+     * @return The weighted edge-cut of the partition.
+     */
+    int getWeightedEdgeCut(const vector<int> &partition)
+    {
+        int weightedEdgeCut = 0;
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
+        {
+            for (const Edge &edge : _adjacencyList[vertex])
+            {
+                int sourcePartition = partition[vertex];
+                int destPartition = partition[edge.destination];
+                if (sourcePartition != destPartition)
+                {   
+                    weightedEdgeCut += edge.weight;
+                }
+            }
+        }
+        return weightedEdgeCut / 2;
+    }
+
+    /**
+     * @brief Computes the balance metric for the graph partition.
+     * @param partition A vector containing the partition of each vertex.
+     * @param numberOfBlocks The number of blocks in the partition.
+     * @return The balance of the partition.
+     */
+    double getBalance(const vector<int> &partition, int numberOfBlocks)
+    {
+        vector<int> blockSizes(numberOfBlocks, 0);
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
+        {
+            blockSizes[partition[vertex]]++;
         }
         int maxBlockSize = *max_element(blockSizes.begin(), blockSizes.end());
         double balance = static_cast<double>(maxBlockSize) / (_numberOfVertices / static_cast<double>(numberOfBlocks));
         return balance;
     }
 
-    void computeMaxCut() {
-        vector<int> cutPartition(_numberOfVertices, 0); // Vector which keeps track of the partitions
-        cutPartition[0] = 1;                            // initial cut: Node 0 in Partition 1
-
-        computePartitionMetrics(cutPartition, 2);
-        int localHigh = _weightedEdgeCut;
-
-        bool somethingChanged = false;
-
-        for (int vertex = 0; vertex < _numberOfVertices; ++vertex) {
-            cutPartition[vertex] ^= 1; // Alternating between 0 and 1 using bitwise XOR
+    /**
+     * @brief Computes the initial cut of the max cut problem.
+     * @return The initial cut.
+     */
+    vector<int> computeInitialCut()
+    {
+        vector<int> cut(_numberOfVertices);
+        for (int i = 0; i < _numberOfVertices; ++i)
+        {
+            cut[i] = i % 2; // Alternating partition
         }
+        return cut;
+    }
 
-        while (!somethingChanged) {
-            somethingChanged = false;
+    /**
+     * @brief Performs label propagation to optimize the cut.
+     * @param cut A reference to the vector representing the cut.
+     *
+     * This function iteratively moves vertices between partitions to improve the cut.
+     * The process stops when no more beneficial moves can be found, or when the maximum number of iterations is reached.
+     */
+    void labelPropagation(vector<int> &cut)
+    {
+        bool vertexMoved;
+        const int maxIterations = 100; // Maximum number of iterations to prevent infinite loops
+        int iterCount = 0;
 
-            for (int vertex = 0; vertex < _numberOfVertices; ++vertex) {
-                cutPartition[vertex] ^= 1; // Toggle partition for current vertex
+        do
+        {
+            vertexMoved = false;
+            for (int src = 0; src < _numberOfVertices; ++src)
+            {
+                for (const Edge &edge : _adjacencyList[src])
+                {
+                    int dest = edge.destination;
+                    int gain = edge.weight;
 
-                computePartitionMetrics(cutPartition, 2);
+                    // Update cut based on the gain
+                    if (gain > 0 && cut[src] != cut[dest])
+                    {
+                        cut[src] = !cut[src];
+                        vertexMoved = true;
+                    }
+                }
+            }
+            iterCount++;
+        } while (vertexMoved && iterCount < maxIterations);
+    }
 
-                if (localHigh < _weightedEdgeCut) {
-                    localHigh = _weightedEdgeCut;
-                    somethingChanged = true;
-                } else {
+    /**
+     * @brief Computes the maximum cut of the graph.
+     *
+     * This function initializes the cut and then iteratively improves it by toggling the partition of each vertex.
+     * The process stops when no more beneficial moves can be found.
+     */
+    void computeMaxCut()
+    {
+        vector<int> cutPartition = computeInitialCut();
+        double localHighWeightedEdgeCut = getWeightedEdgeCut(cutPartition);
+        bool improved;
+
+        do
+        {
+            improved = false;
+
+            for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
+            {
+                cutPartition[vertex] = !cutPartition[vertex]; // Toggle partition for current vertex
+
+                double weightedEdgeCut = getWeightedEdgeCut(cutPartition);
+
+                if (localHighWeightedEdgeCut < weightedEdgeCut)
+                {
+                    localHighWeightedEdgeCut = weightedEdgeCut;
+                    improved = true;
+                }
+                else
+                {
                     cutPartition[vertex] ^= 1; // Revert partition change if not improving
                 }
             }
-        }
+        } while (improved);
+        cout << endl;
+        cout << localHighWeightedEdgeCut << endl;
 
-        cout << localHigh / 2 << endl;
-
-        for (int i = 0; i < _numberOfVertices; i++) {
-            if (cutPartition[i] == 1) {
+        for (int i = 0; i < _numberOfVertices; i++)
+        {
+            if (!cutPartition[i])
+            {
                 cout << i + 1 << " ";
             }
         }
     }
-
 };
 
 /**
@@ -255,10 +328,17 @@ public:
  */
 int main()
 {
+    string path = "/Users/jan/Documents/code/AlgorithmEngineering/";
+    ifstream file(path + "example3.txt");
+    if (!file.is_open())
+    {
+        cerr << "Failed to open the file." << endl;
+        return 1;
+    }
 
     // get graph metrics
     int numberOfNodes, numberOfEdges;
-    cin >> numberOfNodes >> numberOfEdges;
+    file >> numberOfNodes >> numberOfEdges;
 
     Graph G(numberOfNodes);
 
@@ -266,19 +346,19 @@ int main()
     for (int i = 0; i < numberOfEdges * 2; i++)
     {
         int source, destination, weight;
-        cin >> source >> destination >> weight;
-        G.addEdge(source, destination, weight);
+        file >> source >> destination >> weight;
+        G.addEdge(source - 1, destination - 1, weight);
     }
 
     // Read partition
     // vector<int> partition(numberOfNodes);
     // for (int i = 0; i < numberOfNodes; ++i)
     // {
-    //     file >> partition[i];
+    //    file >> partition[i];
     // }
 
     // G.printGraph();
-    
+
     G.computeMaxCut();
 
     return 0;
