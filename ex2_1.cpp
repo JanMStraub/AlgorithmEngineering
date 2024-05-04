@@ -4,6 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include <fstream>
+
 using namespace std;
 
 struct Edge
@@ -196,9 +197,9 @@ public:
         int weightedEdgeCut = 0;
         for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
         {
+            int sourcePartition = partition[vertex];
             for (const Edge &edge : _adjacencyList[vertex])
             {
-                int sourcePartition = partition[vertex];
                 int destPartition = partition[edge.destination];
                 if (sourcePartition != destPartition)
                 {
@@ -242,41 +243,6 @@ public:
     }
 
     /**
-     * @brief Performs label propagation to optimize the cut.
-     * @param cut A reference to the vector representing the cut.
-     *
-     * This function iteratively moves vertices between partitions to improve the cut.
-     * The process stops when no more beneficial moves can be found, or when the maximum number of iterations is reached.
-     */
-    void labelPropagation(vector<int> &cut)
-    {
-        bool vertexMoved;
-        const int maxIterations = 100; // Maximum number of iterations to prevent infinite loops
-        int iterCount = 0;
-
-        do
-        {
-            vertexMoved = false;
-            for (int src = 0; src < _numberOfVertices; ++src)
-            {
-                for (const Edge &edge : _adjacencyList[src])
-                {
-                    int dest = edge.destination;
-                    int gain = edge.weight;
-
-                    // Update cut based on the gain
-                    if (gain > 0 && cut[src] != cut[dest])
-                    {
-                        cut[src] = !cut[src];
-                        vertexMoved = true;
-                    }
-                }
-            }
-            iterCount++;
-        } while (vertexMoved && iterCount < maxIterations);
-    }
-
-    /**
      * @brief Computes the maximum cut of the graph.
      *
      * This function initializes the cut and then iteratively improves it by toggling the partition of each vertex.
@@ -285,8 +251,9 @@ public:
     void computeMaxCut()
     {
         vector<int> cutPartition = computeInitialCut();
-        double localHighWeightedEdgeCut = getWeightedEdgeCut(cutPartition);
+        int localHighWeightedEdgeCut = getWeightedEdgeCut(cutPartition);
         bool improved;
+        int numIterationsWithoutImprovement = 0;
 
         do
         {
@@ -294,21 +261,24 @@ public:
 
             for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
             {
-                cutPartition[vertex] = !cutPartition[vertex]; // Toggle partition for current vertex
+                int oldPartition = cutPartition[vertex];
+                cutPartition[vertex] ^= 1; // Toggle partition for current vertex
+                int newWeightedEdgeCut = getWeightedEdgeCut(cutPartition);
 
-                double weightedEdgeCut = getWeightedEdgeCut(cutPartition);
-
-                if (localHighWeightedEdgeCut < weightedEdgeCut)
+                if (newWeightedEdgeCut > localHighWeightedEdgeCut)
                 {
-                    localHighWeightedEdgeCut = weightedEdgeCut;
+                    localHighWeightedEdgeCut = newWeightedEdgeCut;
                     improved = true;
+                    numIterationsWithoutImprovement = 0;
                 }
                 else
                 {
-                    cutPartition[vertex] ^= 1; // Revert partition change if not improving
+                    cutPartition[vertex] = oldPartition; // Revert partition change
                 }
             }
-        } while (improved);
+
+            numIterationsWithoutImprovement++;
+        } while (improved && numIterationsWithoutImprovement < _numberOfVertices); // Stop if no improvement after one full iteration
 
         cout << localHighWeightedEdgeCut << endl;
 
