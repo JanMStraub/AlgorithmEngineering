@@ -28,6 +28,89 @@ private:
     int _numberOfVertices;
     vector<vector<Edge> > _adjacencyList;
 
+    /**
+     * @brief Computes random initial cut of the max cut problem.
+     * @return The initial cut.
+     */
+    vector<int> computeRandomInitialCut()
+    {
+        unsigned int seed = static_cast<unsigned int>(time(nullptr));
+        srand(seed);
+        vector<int> cut(_numberOfVertices);
+        int randomVertex = rand() % _numberOfVertices;
+        cut[randomVertex] = 1;
+        cout << "selected vertex: " << randomVertex << endl;
+        return cut;
+    }
+
+    /**
+     * @brief Computes the initial cut of the max cut problem.
+     * @return The initial cut.
+     */
+    vector<int> computeInitialCut()
+    {
+        vector<int> cut(_numberOfVertices);
+        for (int i = 0; i < _numberOfVertices; ++i)
+        {
+            cut[i] = i % 2; // Alternating partition
+        }
+        return cut;
+    }
+
+    int findOptimalVertexForRandomCut(vector<int> partition)
+    {
+        int highestWeight = -1;
+        int optimalVertex = -1;
+
+        for (int vertex = 0; vertex < _numberOfVertices; ++vertex)
+        {
+            if (partition[vertex] == 0)
+            {
+                for (const Edge &edge : _adjacencyList[vertex])
+                {
+                    int destinationWeight = getWeightedDegree(edge.destination);
+                    if (highestWeight < destinationWeight && partition[edge.destination] == 1)
+                    {
+                        highestWeight = destinationWeight;
+                        optimalVertex = vertex;
+                    }
+                }
+            }
+        }
+
+        if (optimalVertex == -1)
+        {
+            throw std::runtime_error("No optimal vertex found");
+        }
+
+        return optimalVertex;
+    }
+
+    /**
+     * @brief Finds the neighborhood of a given vertex.
+     * @param vertex The vertex for which to find the neighborhood.
+     * @return The vector of neighboring vertices.
+     */
+    vector<int> findNeighborhood(int vertex)
+    {
+        vector<int> neighborhood;
+        for (const Edge &edge : _adjacencyList[vertex])
+        {
+            if (edge.destination != vertex - 1) // Exclude the source vertex itself
+            {
+                neighborhood.push_back(edge.destination);
+            }
+        }
+
+        // Sort the neighborhood
+        sort(neighborhood.begin(), neighborhood.end());
+
+        // Remove duplicates
+        neighborhood.erase(unique(neighborhood.begin(), neighborhood.end()), neighborhood.end());
+
+        return neighborhood;
+}
+
 public:
     /**
      * @brief Constructs a Graph object with the specified number of vertices.
@@ -228,18 +311,35 @@ public:
         return balance;
     }
 
-    /**
-     * @brief Computes the initial cut of the max cut problem.
-     * @return The initial cut.
-     */
-    vector<int> computeInitialCut()
+    void getNeighborhood(int src, int dest)
     {
-        vector<int> cut(_numberOfVertices);
-        for (int i = 0; i < _numberOfVertices; ++i)
+        auto neighborhood1 = findNeighborhood(src);
+        auto neighborhood2 = findNeighborhood(dest);
+
+        // Compute intersection
+        vector<int> intersection;
+        set_intersection(neighborhood1.begin(), neighborhood1.end(),
+                        neighborhood2.begin(), neighborhood2.end(),
+                        back_inserter(intersection));
+
+        // Compute union
+        vector<int> uni;
+        merge(neighborhood1.begin(), neighborhood1.end(),
+            neighborhood2.begin(), neighborhood2.end(),
+            back_inserter(uni));
+
+        // Output results
+        for (const auto &value : intersection)
         {
-            cut[i] = i % 2; // Alternating partition
+            cout << value << " ";
         }
-        return cut;
+        cout << endl;
+
+        for (const auto &value : uni)
+        {
+            cout << value << " ";
+        }
+        cout << endl;
     }
 
     /**
@@ -250,10 +350,11 @@ public:
      */
     void computeMaxCut()
     {
-        vector<int> cutPartition = computeInitialCut();
+        vector<int> cutPartition = computeRandomInitialCut();
         int localHighWeightedEdgeCut = getWeightedEdgeCut(cutPartition);
         bool improved;
         int numIterationsWithoutImprovement = 0;
+        cout << findOptimalVertexForRandomCut(cutPartition) << endl;
 
         do
         {
@@ -299,7 +400,7 @@ public:
 int main()
 {
     string path = "/Users/jan/Documents/code/AlgorithmEngineering/";
-    ifstream file(path + "example3.txt");
+    ifstream file(path + "example2_1.txt");
     if (!file.is_open())
     {
         cerr << "Failed to open the file." << endl;
@@ -320,6 +421,11 @@ int main()
         G.addEdge(source, destination, weight); // 0-based indexing
     }
 
+    int v1, v2;
+    file >> v1 >> v2;
+
+    G.getNeighborhood(v1, v2);
+
     // Read partition
     // vector<int> partition(numberOfNodes);
     // for (int i = 0; i < numberOfNodes; ++i)
@@ -329,12 +435,10 @@ int main()
 
     // G.printGraph();
 
-    G.computeMaxCut();
-
     return 0;
 }
 
 /*
-30
-3 5 7
+3
+1 2 3 4 5 7
 */
