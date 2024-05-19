@@ -10,6 +10,7 @@
         "__locale": "cpp",
         "ostream": "cpp",
         "__node_handle": "cpp",
-        "deque": "cpp"
+        "deque": "cpp",
+        "queue": "cpp"
     }
 }

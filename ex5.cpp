@@ -4,7 +4,6 @@
 #include <iostream>
 #include <algorithm>
 #include <fstream>
-#include <unordered_map>
 #include <queue>
 
 using namespace std;
@@ -80,12 +79,16 @@ private:
         {
             Node &currentNode = q.front();
             q.pop();
-            for (const Edge &edge : _adjacencyList[currentNode.id])
-                if (currentNode.level < 0 && edge.flow < edge.capacity)
+            cout << "Current node: " << currentNode.id + 1 << " level: " << currentNode.level << endl;
+            //cout << "size of queue: " << q.size() << endl;
+            for (Edge &edge : _adjacencyList[currentNode.id])
+            {
+                if (edge.destination.level < 0 && edge.flow < edge.capacity)
                 {
-                    currentNode.level = edge.source.level + 1;
+                    edge.destination.level = currentNode.level + 1;
                     q.push(edge.destination);
                 }
+            }
         }
 
         return _nodeList[target].level < 0 ? false : true;
@@ -147,20 +150,27 @@ public:
         _nodeList[targetID].target = true;
     }
 
-    int computeMaxFlowDinic()
+    void computeMaxFlowDinic()
     {
-        if (_sourceID == _targetID)
-            return -1;
+
+        _BFS(_sourceID, _targetID);
+        /*
+        if (_sourceID == _targetID) 
+        {
+            cout << "no correcto inputo" << endl;
+            return;
+        }
 
         int total = 0;
 
         while (_BFS(_sourceID, _targetID))
         {
-            while (int flow = _sendFlow(_nodeList[_sourceID], INT_MAX))
+            while (int flow = _sendFlow(_nodeList[_sourceID], 10000))
                 total += flow;
         }
 
-        return total;
+        cout << "computed cut: " << total << endl;
+        */
     }
 };
 
@@ -188,6 +198,12 @@ int main()
     // Create a graph
     Graph G(numberOfNodes);
 
+    // Add nodes to the graph
+    for (int line = 0; line < numberOfNodes; ++line)
+    {
+        G.addNode(line);
+    }
+
     // Add edges to the graph
     for (int line = 0; line < numberOfEdges * 2; ++line)
     {
@@ -196,17 +212,11 @@ int main()
         G.addEdge(source, destination, weight);
     }
 
-    // Add nodes to the graph
-    for (int line = 0; line < numberOfNodes; ++line)
-    {
-        G.addNode(line);
-    }
-
     int source, target;
     file >> source >> target;
     G.setSourceAndTarget(source, target);
 
-    cout << G.computeMaxFlowDinic() << endl;
+    G.computeMaxFlowDinic();
 
     return 0;
 }
