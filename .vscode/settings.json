@@ -8,6 +8,8 @@
         "fstream": "cpp",
         "bitset": "cpp",
         "__locale": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "__node_handle": "cpp",
+        "deque": "cpp"
     }
 }
