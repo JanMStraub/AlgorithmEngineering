@@ -4,7 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include <fstream>
-#include <queue>
+#include <deque>
 
 using namespace std;
 
@@ -38,12 +38,12 @@ struct Node
  */
 struct Edge
 {
-    Node source;
-    Node destination; // Destination vertex of the edge
+    int source;
+    int destination; // Destination vertex of the edge
     int flow;      // Weight of the edge
     int capacity;
 
-    Edge(Node &src, Node &dest, int cap) : source(src), destination(dest), flow(0), capacity(cap) {}
+    Edge(int src, int dest, int cap) : source(src), destination(dest), flow(0), capacity(cap) {}
 };
 
 /**
@@ -72,45 +72,50 @@ private:
         Node &sourceNode = _nodeList[source];
         sourceNode.level = 0;
 
-        queue<Node> q;
-        q.push(sourceNode);
+        deque<int> q;
+        q.push_back(source);
 
         while (!q.empty())
         {
-            Node &currentNode = q.front();
-            q.pop();
-            cout << "Current node: " << currentNode.id + 1 << " level: " << currentNode.level << endl;
-            //cout << "size of queue: " << q.size() << endl;
-            for (Edge &edge : _adjacencyList[currentNode.id])
+            int currentNodeIndex = q.front();
+            q.pop_front();
+            Node &currentNode = _nodeList[currentNodeIndex];
+
+            for (const Edge &edge : _adjacencyList[currentNode.id])
             {
-                if (edge.destination.level < 0 && edge.flow < edge.capacity)
+                Node &destinationNode = _nodeList[edge.destination];                
+                if ((destinationNode.level < 0) && (edge.flow < edge.capacity))
                 {
-                    edge.destination.level = currentNode.level + 1;
-                    q.push(edge.destination);
+                    q.push_back(destinationNode.id);
+                    destinationNode.level = currentNode.level + 1;
                 }
             }
         }
 
-        return _nodeList[target].level < 0 ? false : true;
-    }
+        cout << "BFS: " << (_nodeList[target].level >= 0) << endl;
+    
+        return _nodeList[target].level >= 0;
+        }
 
-    int _sendFlow(Node currentNode, int flow)
+    int _sendFlow(const Node& currentNode, int flow)
     {
         if (currentNode.target)
             return flow;
         
-        for (Edge &edge : _adjacencyList[currentNode.id])
-            if (edge.source.level == currentNode.level + 1 && edge.flow < edge.capacity)
-            {
-                int currentFlow = min(flow, edge.capacity - edge.flow);
-                int tempFlow = _sendFlow(edge.source, currentFlow);
+        for (Edge& edge : _adjacencyList[currentNode.id])
+        {
+            int currentFlow = min(flow, edge.capacity - edge.flow);
+            if (currentFlow == 0 || currentNode.level != currentNode.level + 1)
+                continue;
 
-                if (tempFlow > 0)
-                {
-                    edge.flow += tempFlow;
-                    return tempFlow;
-                }
+            int tempFlow = _sendFlow(edge.destination, currentFlow);
+
+            if (tempFlow > 0)
+            {
+                edge.flow += tempFlow;
+                return tempFlow;
             }
+        }
         return 0;
     }
 
@@ -139,22 +144,19 @@ public:
      */
     void addEdge(int source, int destination, int capacity)
     {
-        _adjacencyList[source - 1].push_back(Edge(_nodeList[source - 1], _nodeList[destination - 1], capacity));
+        _adjacencyList[source - 1].push_back(Edge(source - 1, destination - 1, capacity));
     }
 
     void setSourceAndTarget(int sourceID, int targetID)
     {
-        _sourceID = sourceID;
-        _targetID = targetID;
+        _sourceID = sourceID - 1;
+        _targetID = targetID - 1;
         _nodeList[sourceID].source = true;
         _nodeList[targetID].target = true;
     }
 
     void computeMaxFlowDinic()
     {
-
-        _BFS(_sourceID, _targetID);
-        /*
         if (_sourceID == _targetID) 
         {
             cout << "no correcto inputo" << endl;
@@ -165,12 +167,13 @@ public:
 
         while (_BFS(_sourceID, _targetID))
         {
-            while (int flow = _sendFlow(_nodeList[_sourceID], 10000))
+            int flow = _sendFlow(_nodeList[_sourceID], 10000);
+            while (flow > 0)
                 total += flow;
         }
 
         cout << "computed cut: " << total << endl;
-        */
+
     }
 };
 
