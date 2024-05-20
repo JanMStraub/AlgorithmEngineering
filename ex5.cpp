@@ -69,6 +69,9 @@ private:
 
     bool _BFS (int source, int target)
     {
+        for (Node &node : _nodeList)
+            node.level = -1;
+
         Node &sourceNode = _nodeList[source];
         sourceNode.level = 0;
 
@@ -92,7 +95,7 @@ private:
             }
         }
 
-        cout << "BFS: " << (_nodeList[target].level >= 0) << endl;
+        //cout << "BFS: " << (_nodeList[target].level >= 0) << endl;
     
         return _nodeList[target].level >= 0;
         }
@@ -104,8 +107,10 @@ private:
         
         for (Edge& edge : _adjacencyList[currentNode.id])
         {
+            cout << "edge source: " << edge.source << " edge destination: " << edge.destination << " edge flow: " << edge.flow << endl;
             int currentFlow = min(flow, edge.capacity - edge.flow);
-            if (currentFlow == 0 || currentNode.level != currentNode.level + 1)
+            cout << "current flow: " << currentFlow << endl;
+            if (currentFlow == 0 || (_nodeList[edge.destination].level != currentNode.level + 1))
                 continue;
 
             int tempFlow = _sendFlow(edge.destination, currentFlow);
@@ -167,8 +172,7 @@ public:
 
         while (_BFS(_sourceID, _targetID))
         {
-            int flow = _sendFlow(_nodeList[_sourceID], 10000);
-            while (flow > 0)
+            while (int flow = _sendFlow(_nodeList[_sourceID], 10000))
                 total += flow;
         }
 
