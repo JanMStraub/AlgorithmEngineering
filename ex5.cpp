@@ -86,7 +86,7 @@ private:
 
             for (const Edge &edge : _adjacencyList[currentNode.id])
             {
-                Node &destinationNode = _nodeList[edge.destination];                
+                Node &destinationNode = _nodeList[edge.destination];
                 if ((destinationNode.level < 0) && (edge.flow < edge.capacity))
                 {
                     q.push_back(destinationNode.id);
@@ -98,28 +98,29 @@ private:
         //cout << "BFS: " << (_nodeList[target].level >= 0) << endl;
     
         return _nodeList[target].level >= 0;
-        }
+    }
 
     int _sendFlow(const Node& currentNode, int flow)
     {
         if (currentNode.target)
             return flow;
-        
+
         for (Edge& edge : _adjacencyList[currentNode.id])
         {
-            cout << "edge source: " << edge.source << " edge destination: " << edge.destination << " edge flow: " << edge.flow << endl;
-            int currentFlow = min(flow, edge.capacity - edge.flow);
-            cout << "current flow: " << currentFlow << endl;
-            if (currentFlow == 0 || (_nodeList[edge.destination].level != currentNode.level + 1))
-                continue;
-
-            int tempFlow = _sendFlow(edge.destination, currentFlow);
-
-            if (tempFlow > 0)
+            cout << "source level: " << currentNode.level << "  destination level: " << _nodeList[edge.destination].level << endl;
+            if (currentNode.level + 1 == _nodeList[edge.destination].level && edge.flow < edge.capacity)
             {
-                edge.flow += tempFlow;
-                return tempFlow;
+                int currentFlow = min(flow, edge.capacity - edge.flow);
+                cout << "current flow: " << currentFlow << endl;
+                int tempFlow = _sendFlow(_nodeList[edge.destination], currentFlow);
+                
+                if (tempFlow > 0)
+                {
+                    edge.flow += tempFlow;
+                    return tempFlow;
+                }
             }
+            cout << "edge source: " << edge.source + 1 << " edge destination: " << edge.destination + 1 << " edge flow: " << edge.flow << endl;
         }
         return 0;
     }
@@ -172,6 +173,7 @@ public:
 
         while (_BFS(_sourceID, _targetID))
         {
+            vector<bool> visited(_nodeList.size(), false);
             while (int flow = _sendFlow(_nodeList[_sourceID], 10000))
                 total += flow;
         }
