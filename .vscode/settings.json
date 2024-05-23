@@ -11,6 +11,7 @@
         "ostream": "cpp",
         "__node_handle": "cpp",
         "deque": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "__bit_reference": "cpp"
     }
 }
