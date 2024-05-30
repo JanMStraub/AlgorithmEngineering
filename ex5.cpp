@@ -271,7 +271,7 @@ public:
         // If the source and target are the same, print an error message and return
         if (_sourceID == _targetID)
         {
-            cout << "no correcto inputo" << endl;
+            cout << "source and target are the same" << endl;
             return;
         }
 

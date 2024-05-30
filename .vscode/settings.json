@@ -12,6 +12,7 @@
         "__node_handle": "cpp",
         "deque": "cpp",
         "queue": "cpp",
-        "__bit_reference": "cpp"
+        "__bit_reference": "cpp",
+        "ios": "cpp"
     }
 }

@@ -1,6 +1,8 @@
+#include <cmath>
+#include <cstdio>
 #include <vector>
 #include <iostream>
-#include <queue>
+#include <algorithm>
 #include <fstream>
 #include <climits>
 
@@ -39,7 +41,7 @@ class Graph
 private:
     int _numberOfVertices; // Number of vertices in the graph
     int _numberOfEdges;
-    vector<vector<Edge> > _adjacencyList; // Adjacency list to represent the graph
+    vector<Edge> _edgeList; // A list to represent the edges
 
 public:
     /**
@@ -53,8 +55,8 @@ public:
      */
     Graph(int vertices, int edges) : _numberOfVertices(vertices), _numberOfEdges(edges)
     {
-        // Resize the adjacency list to hold the edges for each vertex
-        _adjacencyList.resize(_numberOfVertices);
+        // Reserve the edge list to hold the edges for each vertex
+        _edgeList.reserve(_numberOfVertices);
     }
 
     /**
@@ -70,47 +72,78 @@ public:
      */
     void addEdge(int source, int destination, int weight)
     {
-        _adjacencyList[source - 1].push_back(Edge(source - 1, destination - 1, weight));
+        _edgeList.push_back(Edge(source - 1, destination - 1, weight));
     }
 
     void bellmannFord()
     {
-        vector<int> negativeCycleNodes;
+        // Initialize vectors
+        vector<int> cycleNodes;
+        cycleNodes.reserve(_numberOfVertices);
+        vector<int> distances(_numberOfVertices, INT_MAX);
+        distances.reserve(_numberOfVertices);
+        vector<int> previousNode(_numberOfVertices, -1);
+        int lastNodeInCycle = -1;
+        distances[_numberOfVertices - 1] = 10000;
 
-        vector<int> distances(_numberOfVertices, 1000);
-        distances[0] = 0;
-        for(int i=1; i<_numberOfVertices; i++)
-            for (int nodeID = 0; nodeID < _numberOfVertices; ++nodeID)
-                for (const Edge &edge : _adjacencyList[nodeID])
-                    if (distances[edge.source] != 1000 && distances[nodeID] + edge.weight < distances[edge.destination])
+        // Iterate over all nodes
+        for (int node = 0; node < _numberOfVertices; ++node)
+        {  
+            lastNodeInCycle = -1;
+            // Iterate over all edges
+            for (const Edge &edge : _edgeList)
+            {
+                // Check if the source node distance is less than INT_MAX
+                if (distances[edge.source] < INT_MAX)
+                {
+                    // Check if the new distance is less than the current distance
+                    if (distances[edge.source] + edge.weight < distances[edge.destination])
                     {
-                        distances[edge.destination] = distances[nodeID] + edge.weight;
+                        // Update the distance
+                        distances[edge.destination] = max(-INT_MAX, distances[edge.source] + edge.weight);
+                        // Update the previous node
+                        previousNode[edge.destination] = edge.source;
+                        // Update the last node in cycle
+                        lastNodeInCycle = edge.destination;
                     }
+                }
+            }
+        }
 
-        for (int nodeID = 0; nodeID < _numberOfVertices; nodeID++)
-            for (const Edge &edge : _adjacencyList[nodeID])
-                if (distances[edge.source] != 1000 && distances[nodeID] + edge.weight < distances[edge.destination])
-                    negativeCycleNodes.push_back(edge.destination);
+        // Check if a negative cycle was found
+        if (lastNodeInCycle == -1)
+        {
+            cout << "No negative cycles found" << endl;
+        }
+        else
+        {
+            // Find the start of the cycle
+            for (int i = 0; i < _numberOfVertices; ++i)
+                lastNodeInCycle = previousNode[lastNodeInCycle];
 
-        cout << negativeCycleNodes.size() << endl;
+            // Build the negative cycle nodes list
+            for (int node = lastNodeInCycle;; node = previousNode[node])
+            {
+                cycleNodes.push_back(node);
+                if (node == lastNodeInCycle && cycleNodes.size() > 1)
+                    break;
+            }
 
-        for (int i = 0; i < negativeCycleNodes.size(); ++i)
-            cout << negativeCycleNodes[i] + 1 << " ";
+            // Reverse the list to get the correct order
+            reverse(cycleNodes.begin(), cycleNodes.end());
 
-        cout << negativeCycleNodes[0]+1 << endl;
+            // Print the size of the cycle
+            cout << cycleNodes.size() - 1 << endl;
 
-        /*
-        amount of nodes in the found negative cycle: 5
-        list of nodes in the found negative cycle repeating the first node at the end: 4 7 1 2 5 4
-        */
+            // Print the nodes in the cycle
+            for (int node : cycleNodes)
+                cout << node + 1 << " ";
+        }
     }
 };
 
 /**
  * @brief Main function
- *
- * This function reads a graph from standard input, computes the maximum flow from a source to a target using Dinic's algorithm, and prints the maximum flow and the nodes in the computed cut.
- *
  * @return 0 on successful execution
  */
 int main()
@@ -143,6 +176,8 @@ int main()
     }
 
     G.bellmannFord();
+
+    cout << endl;
 
     // Return 0 on successful execution
     return 0;
