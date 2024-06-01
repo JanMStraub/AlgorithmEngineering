@@ -68,7 +68,7 @@ class Graph
 {
 private:
     int _numberOfVertices;               // Number of vertices in the graph
-    vector<vector<Edge>> _adjacencyList; // Adjacency list to represent the graph
+    vector<vector<Edge> > _adjacencyList; // Adjacency list to represent the graph
     vector<Node> _nodeList;              // List of nodes in the graph
 
     /**
