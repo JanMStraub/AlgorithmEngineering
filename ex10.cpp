@@ -1,52 +1,16 @@
 #include <vector>
 #include <iostream>
 #include <queue>
-#include <unordered_set>
 #include <fstream>
-#include <algorithm>
 
 using namespace std;
 
-/**
- * @struct Edge
- * @brief Structure to represent an edge in the graph.
- * @param source The source vertex of the edge.
- * @param destination The destination vertex of the edge.
- * @param weight The weight of this edge.
- */
-struct Edge
-{
-    int source;      // Source vertex of the edge
-    int destination; // Destination vertex of the edge
-    int weight;      // Weight of this edge
-
-    /**
-     * @brief Constructor for Edge.
-     * @param src The source vertex of the edge.
-     * @param dest The destination vertex of the edge.
-     * @param w The weight of the edge.
-     */
-    Edge(int src, int dest, int w) : source(src), destination(dest), weight(w) {}
-};
-
-/**
- * @class Graph
- * @brief Class to represent a graph.
- * @param _numberOfVertices The number of vertices in the graph.
- * @param _adjacencyList The adjacency list to represent the graph.
- * @param _edgeList The list of edges in the graph.
- */
 class Graph
 {
 private:
     int _numberOfVertices; // Number of vertices in the graph
-    vector<vector<Edge> > _adjacencyList; // Adjacency list to represent the graph
+    vector<vector<int> > _adjacencyList; // Adjacency list to represent the graph
 
-    /**
-     * @brief Function to perform BFS and return the distances from the start node.
-     * @param startNode The starting node for BFS.
-     * @return A pair of maximum distance and the farthest node from the start.
-     */
     pair <int, int> _BFS(int startNode)
     {
         vector<int> distances(_numberOfVertices, -1);
@@ -61,9 +25,9 @@ private:
             int currentNode = q.front();
             q.pop();
 
-            for (const Edge &edge : _adjacencyList[currentNode])
+            for (const int &edge : _adjacencyList[currentNode])
             {
-                int neighbor = edge.destination;
+                int neighbor = edge;
                 if (distances[neighbor] == -1)
                 {
                     distances[neighbor] = distances[currentNode] + 1;
@@ -81,39 +45,16 @@ private:
     }
 
 public:
-    /**
-     * @brief Constructor for Graph.
-     *
-     * This constructor initializes the graph with the specified number of vertices.
-     * It resizes the adjacency list to hold the edges for each vertex and reserves space for the node list.
-     * It also creates a node for each vertex and adds it to the node list.
-     *
-     * @param vertices The number of vertices in the graph.
-     */
     Graph(int vertices, int edges) : _numberOfVertices(vertices)
     {
         _adjacencyList.resize(_numberOfVertices);
     }
 
-    /**
-     * @brief Function to add an edge to the graph.
-     *
-     * This function adds an edge from the source vertex to the destination vertex with the specified weight.
-     * The edge is added to the adjacency list of the source vertex.
-     * The vertices are decremented by 1 because they are 0-indexed in the adjacency list.
-     *
-     * @param source The source vertex of the edge.
-     * @param destination The destination vertex of the edge.
-     * @param weight The weight of the edge.
-     */
-    void addEdge(int source, int destination, int weight)
+    void addEdge(int source, int destination)
     {
-        _adjacencyList[source - 1].push_back(Edge(source - 1, destination - 1, weight));
+        _adjacencyList[source - 1].push_back(destination - 1);
     }
 
-    /**
-     * @brief Function to find the diameter of the graph.
-     */
     void findDiameter()
     {
         // Start BFS from an arbitrary node (0)
@@ -138,10 +79,7 @@ public:
     }
 };
 
-/**
- * @brief Main function
- * @return 0 on successful execution
- */
+
 int main()
 {
     // Improve the performance of cin
@@ -149,7 +87,7 @@ int main()
     cin.tie(NULL);
 
     string path = "/Users/jan/Documents/code/ae/";
-    ifstream file(path + "example9.txt");
+    ifstream file(path + "example10.txt");
     if (!file.is_open())
     {
         cerr << "Failed to open the file." << endl;
@@ -168,7 +106,7 @@ int main()
     {
         int source, destination, weight;
         file >> source >> destination >> weight;
-        G.addEdge(source, destination, weight);
+        G.addEdge(source, destination);
     }
 
     G.findDiameter();
