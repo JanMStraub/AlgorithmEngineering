@@ -19,7 +19,6 @@ struct Edge
     int source;      // Source vertex of the edge
     int destination; // Destination vertex of the edge
     int weight;      // Weight of this edge
-    int color;       // Color of this edge
 
     /**
      * @brief Constructor for Edge.
@@ -27,7 +26,7 @@ struct Edge
      * @param dest The destination vertex of the edge.
      * @param w The weight of the edge.
      */
-    Edge(int src, int dest, int w) : source(src), destination(dest), weight(w), color(-1) {}
+    Edge(int src, int dest, int w) : source(src), destination(dest), weight(w) {}
 };
 
 /**
@@ -41,70 +40,44 @@ class Graph
 {
 private:
     int _numberOfVertices; // Number of vertices in the graph
-    int _numberOfEdges;
     vector<vector<Edge> > _adjacencyList; // Adjacency list to represent the graph
-    vector<bool> _visited; //penis hihihi
-    int _highestColor = 0;
 
-    void _coloring()
+    /**
+     * @brief Function to perform BFS and return the distances from the start node.
+     * @param startNode The starting node for BFS.
+     * @return A pair of maximum distance and the farthest node from the start.
+     */
+    pair <int, int> _BFS(int startNode)
     {
-        // Create a vector of pairs (degree, vertexID) for all vertices
-        vector<pair<int, int> > degrees(_numberOfVertices);
-        for (int i = 0; i < _numberOfVertices; i++)
+        vector<int> distances(_numberOfVertices, -1);
+        queue<int> q;
+        q.push(startNode);
+        distances[startNode] = 0;
+        int maxDistance = 0;
+        int farthestNode = startNode;
+
+        while (!q.empty())
         {
-            degrees[i] = make_pair(_adjacencyList[i].size(), i);
-        }
+            int currentNode = q.front();
+            q.pop();
 
-        // Sort the vertices in descending order of their degrees
-        sort(degrees.begin(), degrees.end(), greater<pair<int, int> >());
-
-        // Color the vertices in the order determined by their degrees
-        for (const auto &degree : degrees)
-        {
-            int currentNodeID = degree.second;
-            _colorVertex(currentNodeID);
-        }
-    }
-
-    void _colorVertex(int currentNodeID)
-    {
-        if (_visited[currentNodeID])
-            return;
-
-        _visited[currentNodeID] = true;
-
-        unordered_set<int> colored;
-
-        // Collect colors of all adjacent edges
-        for (const Edge &e : _adjacencyList[currentNodeID])
-            if (e.color != -1)
-                colored.insert(e.color);
-
-        // Find the smallest color that's not used by adjacent edges
-        int c = 0;
-        while (colored.find(c) != colored.end())
-            c++;
-
-        // Color all edges from currentNodeID
-        for (Edge &edge : _adjacencyList[currentNodeID])
-        {
-            if (edge.color == -1)
+            for (const Edge &edge : _adjacencyList[currentNode])
             {
-                edge.color = c;
-                if (_highestColor < c)
-                    _highestColor = c;
-
-                // Color the reverse edge as well
-                for (Edge &revEdge : _adjacencyList[edge.destination])
+                int neighbor = edge.destination;
+                if (distances[neighbor] == -1)
                 {
-                    if (revEdge.destination == currentNodeID && revEdge.source == edge.destination && revEdge.color == -1)
+                    distances[neighbor] = distances[currentNode] + 1;
+                    q.push(neighbor);
+
+                    if (distances[neighbor] > maxDistance)
                     {
-                        revEdge.color = c;
-                        break;
+                        maxDistance = distances[neighbor];
+                        farthestNode = neighbor;
                     }
                 }
             }
         }
+        return make_pair(maxDistance, farthestNode);
     }
 
 public:
@@ -117,10 +90,9 @@ public:
      *
      * @param vertices The number of vertices in the graph.
      */
-    Graph(int vertices, int edges) : _numberOfVertices(vertices), _numberOfEdges(edges)
+    Graph(int vertices, int edges) : _numberOfVertices(vertices)
     {
         _adjacencyList.resize(_numberOfVertices);
-        _visited.resize(_numberOfVertices);
     }
 
     /**
@@ -139,15 +111,30 @@ public:
         _adjacencyList[source - 1].push_back(Edge(source - 1, destination - 1, weight));
     }
 
-    void edgeColoring()
+    /**
+     * @brief Function to find the diameter of the graph.
+     */
+    void findDiameter()
     {
-        _coloring();
+        // Start BFS from an arbitrary node (0)
+        pair <int, int> currentResult = _BFS(0);
+        int maxDistance = currentResult.first;
+        int node1 = 0;
+        int node2 = currentResult.second;
 
-        cout << _highestColor + 1 << "\n";
-        for (int nodeID = 0; nodeID < _numberOfVertices; ++nodeID)
-            for (const Edge &edge : _adjacencyList[nodeID])
-                if (edge.source < edge.destination)
-                    cout << edge.source + 1 << " " << edge.destination + 1 << " " << edge.color + 1 << "\n";
+        for (int i = 1; i < _numberOfVertices; ++i)
+        {
+            pair <int, int> newCurrentResult = _BFS(i);
+
+            if (newCurrentResult.first > maxDistance) {
+                maxDistance = newCurrentResult.first;
+                node1 = i;
+                node2 = newCurrentResult.second;
+            }
+        }
+
+        cout << maxDistance << "\n";
+        cout << node1 + 1 << " " << node2 + 1 << "\n";
     }
 };
 
@@ -184,7 +171,7 @@ int main()
         G.addEdge(source, destination, weight);
     }
 
-    G.edgeColoring();
+    G.findDiameter();
 
     cout << '\n';
 
@@ -193,18 +180,6 @@ int main()
 }
 
 /*
-number of used colors: 5
-list of edges in E, one by line, followed by its color:
-1 2 1
-1 3 2
-1 7 3
-2 3 3
-2 5 2
-2 4 4
-3 4 1
-3 5 4
-4 5 3
-4 6 2
-4 7 5
-6 7 1
+unweighted diameter of the graph: 3
+pair of nodes whose unweighted distance is equal to the unweighted diameter of the graph: 1 6
 */
